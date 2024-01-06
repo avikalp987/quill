@@ -1,3 +1,5 @@
+import Dashboard from "@/components/Dashboard";
+import { db } from "@/db";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { redirect } from "next/navigation";
 
@@ -13,10 +15,21 @@ const Page = async () => {
         redirect("/auth-callback?origin=dashboard")
     }
 
-    
+    //getting our user from the database
+    const dbUser = await db.user.findFirst({
+        where: {
+            id: user.id
+        }
+    })
+
+    //if the user is not synced to the database
+    if(!dbUser)
+    {
+        redirect("/auth-callback?origin=dashboard")
+    }
 
     return ( 
-        <div>{user.email}</div>
+        <Dashboard />
      );
 }
  
