@@ -47,6 +47,9 @@ dependencies:
   '@types/react-dom':
     specifier: 18.2.18
     version: 18.2.18
+  '@uploadthing/react':
+    specifier: ^6.1.0
+    version: 6.1.0(next@14.0.4)(react@18.2.0)(uploadthing@6.1.1)
   autoprefixer:
     specifier: 10.4.16
     version: 10.4.16(postcss@8.4.32)
@@ -101,6 +104,9 @@ dependencies:
   typescript:
     specifier: 5.3.3
     version: 5.3.3
+  uploadthing:
+    specifier: ^6.1.1
+    version: 6.1.1
   zod:
     specifier: ^3.22.4
     version: 3.22.4
@@ -925,6 +931,42 @@ packages:
 
   /@ungap/structured-clone@1.2.0:
     resolution: {integrity: sha512-zuVdFrMJiuCDQUMCzQaD6KL28MjnqqN8XnAqiEq9PNm/hCPTSGfrXCOfwj1ow4LFb/tNymJPwsNbVePc1xFqrQ==}
+    dev: false
+
+  /@uploadthing/mime-types@0.2.2:
+    resolution: {integrity: sha512-ZUo1JHOPPMZDsUw1mOhhVDIvJGlsjj6T0xJ/YJtulyJwL43S9B5pxg1cHcRuTEgjaxj7B55jiqQ6r9mDrrjH9A==}
+    dev: false
+
+  /@uploadthing/react@6.1.0(next@14.0.4)(react@18.2.0)(uploadthing@6.1.1):
+    resolution: {integrity: sha512-UCck0Jd6wJvvmVMMjlOzgGQghEvWv8Pw+IWxsWMvrD/UHiZX7cWc7TgVy88tiAdtuvgatCLfoOsemBMAIhTFdw==}
+    peerDependencies:
+      next: '*'
+      react: ^17.0.2 || ^18.0.0
+      uploadthing: ^6.0.0
+    peerDependenciesMeta:
+      next:
+        optional: true
+    dependencies:
+      '@uploadthing/shared': 6.0.3(@uploadthing/mime-types@0.2.2)
+      attr-accept: 2.2.2
+      file-selector: 0.6.0
+      next: 14.0.4(react-dom@18.2.0)(react@18.2.0)
+      react: 18.2.0
+      tailwind-merge: 1.14.0
+      uploadthing: 6.1.1
+    transitivePeerDependencies:
+      - '@uploadthing/mime-types'
+    dev: false
+
+  /@uploadthing/shared@6.0.3(@uploadthing/mime-types@0.2.2):
+    resolution: {integrity: sha512-gATWAg7cClqatJMDDaP0s9krijrsY5193ymRZDNkNbi0H8uH70/pP2W/7blV5dRNn6lwHJqL2LaHNcUounBd5Q==}
+    peerDependencies:
+      '@uploadthing/mime-types': ^0.2.2
+    peerDependenciesMeta:
+      '@uploadthing/mime-types':
+        optional: true
+    dependencies:
+      '@uploadthing/mime-types': 0.2.2
     dev: false
 
   /abbrev@1.1.1:
@@ -3563,6 +3605,10 @@ packages:
     engines: {node: '>= 0.4'}
     dev: false
 
+  /tailwind-merge@1.14.0:
+    resolution: {integrity: sha512-3mFKyCo/MBcgyOTlrY8T7odzZFx+w+qKSMAmdFzRvqBfLlSigU6TZnlFHK0lkMwj9Bj8OYU+9yW9lmGuS0QEnQ==}
+    dev: false
+
   /tailwind-merge@2.2.0:
     resolution: {integrity: sha512-SqqhhaL0T06SW59+JVNfAqKdqLs0497esifRrZ7jOaefP3o64fdFNDMrAQWZFMxTLJPiHVjRLUywT8uFz1xNWQ==}
     dependencies:
@@ -3773,6 +3819,14 @@ packages:
       browserslist: 4.22.2
       escalade: 3.1.1
       picocolors: 1.0.0
+    dev: false
+
+  /uploadthing@6.1.1:
+    resolution: {integrity: sha512-DJJMNU0T5v+oidfyy5sw6KADvaDCYzF13BEgvy6ETfy6dnr9yoCkVnE9gzcH1cPpTSpFmoneG7oZGtIAfI1Ehg==}
+    engines: {node: '>=18.13.0'}
+    dependencies:
+      '@uploadthing/mime-types': 0.2.2
+      '@uploadthing/shared': 6.0.3(@uploadthing/mime-types@0.2.2)
     dev: false
 
   /uri-js@4.4.1:
