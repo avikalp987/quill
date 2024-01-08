@@ -1,3 +1,4 @@
+import { db } from "@/db";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { createUploadthing, type FileRouter } from "uploadthing/next";
  
@@ -6,7 +7,7 @@ const f = createUploadthing();
  
 // FileRouter for your app, can contain multiple FileRoutes
 export const ourFileRouter = {
-  pdfUploader: f({ image: { maxFileSize: "4MB" } })
+  pdfUploader: f({ pdf: { maxFileSize: "4MB" } })
     .middleware(async ({ req }) => {
       
         const { getUser } = getKindeServerSession()
@@ -20,7 +21,16 @@ export const ourFileRouter = {
         return { userId: user.id }
     })
     .onUploadComplete(async ({ metadata, file }) => {
-
+        //adding the file to our database
+        const createdFile = await db.file.create({
+            data: {
+                key: file.key,
+                name: file.name,
+                userId: metadata.userId,
+                url: file.url,
+                uploadStatus: "PROCESSING",
+            }
+        })
     }),
 } satisfies FileRouter;
  
