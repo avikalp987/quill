@@ -40,7 +40,7 @@ const Page = async ({params}: PageProps) => {
 
     //if there are files found in the accound of the user
     return (
-        <div className="flex-1 justify-between flex flex-col h-[calc(100vh-3.5rem)] overflow-y-auto">
+        <div className="flex-1 justify-between flex flex-col h-[calc(100vh-3.5rem)]">
             <div className="mx-auto w-full max-w-8xl grow lg:flex xl:px-2">
 
                 {/* left side */}
