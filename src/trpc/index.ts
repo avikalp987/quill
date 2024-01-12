@@ -3,6 +3,7 @@ import { privateProcedure, publicProcedure, router } from './trpc';
 import { TRPCError } from '@trpc/server';
 import { db } from '@/db';
 import { z } from "zod"
+import { INFINITE_QUERY_LIMIT } from '@/config/infinite-query';
 
 export const appRouter = router({
   // ...
@@ -116,6 +117,17 @@ export const appRouter = router({
     }
 
     return {status: file.uploadStatus}
+  }),
+
+  getFileMessages: privateProcedure.input(z.object({
+    limit: z.number().min(1).max(100).nullish(),
+    cursor: z.string().nullish(),
+    fileId: z.string()
+  })).query(({input, ctx}) => {
+    const {userId} = ctx
+    const {fileId, cursor} = input
+
+    const limit = input.limit ?? INFINITE_QUERY_LIMIT
   }),
 });
 
