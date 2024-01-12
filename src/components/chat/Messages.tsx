@@ -47,11 +47,23 @@ const Messages = ({fileId}: MessagesProps) => {
                     //if this is the last message to be rendered
                     if(i === combinedMessages.length-1)
                     {
-                        return <Message />
+                        return (
+                            <Message 
+                                key={message.id}
+                                isNextMessageSamePerson={isNextMessageSamePerson}
+                                message={message}
+                            />
+                        )
                     }
                     else
                     {
-                        <Message />
+                        return(
+                            <Message 
+                            key={message.id}
+                            isNextMessageSamePerson={isNextMessageSamePerson}
+                            message={message}
+                            />
+                        )
                     }
 
                 })
