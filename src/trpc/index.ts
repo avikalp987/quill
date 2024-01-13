@@ -4,6 +4,9 @@ import { TRPCError } from '@trpc/server';
 import { db } from '@/db';
 import { z } from "zod"
 import { INFINITE_QUERY_LIMIT } from '@/config/infinite-query';
+import { absoluteURL } from '@/lib/utils';
+import { getUserSubscriptionPlan, stripe } from '@/lib/stripe';
+import { PLANS } from '@/config/stripe';
 
 export const appRouter = router({
   // ...
@@ -119,6 +122,70 @@ export const appRouter = router({
     return {status: file.uploadStatus}
   }),
 
+  createStripeSession: privateProcedure.mutation(async ({ctx}) => {
+    const { userId } = ctx
+
+    //we need an absolute url on the server side which we can get from the utils
+    const billingUrl = absoluteURL("/dashboard/billing");
+
+    //if we are unauthorized
+    if(!userId)
+    {
+      throw new TRPCError({code: "UNAUTHORIZED"})
+    }
+
+    //fetching the user from our databse
+    const dbUser = await db.user.findFirst({
+      where: {
+        id: userId,
+      }
+    })
+
+    //if we dont have a databse user
+    if(!dbUser)
+    {
+      throw new TRPCError({code: "UNAUTHORIZED"})
+    }
+
+    //determine if the user is already subscribed or not
+    const subscriptionPlan = await getUserSubscriptionPlan()
+
+    if(!subscriptionPlan.isSubscribed && dbUser.stripeCustomerId)
+    {
+      //send the user to a management page, because they are already a customer
+      const stripeSession = await stripe.billingPortal.sessions.create({
+        customer: dbUser.stripeCustomerId,
+        return_url: billingUrl
+      })
+
+      //returning the url of the session to the user
+      return {url: stripeSession.url}
+    }
+
+
+    //now the user is not subscribed, so they wanna buy our services
+    const stripeSession = await stripe.checkout.sessions.create({
+      success_url: billingUrl,
+      cancel_url: billingUrl,
+      payment_method_types: ["card"],
+      mode: "subscription",
+      billing_address_collection: "auto",
+      line_items: [
+        {
+          price: PLANS.find((plan) => plan.name==="Pro")?.price.priceIds.test,
+          quantity: 1,
+        }
+      ],
+      //the data which is sent to the webhook is called metadata afterwards
+      metadata: {
+        userId: userId,
+      }
+    })
+
+    return {url: stripeSession.url}
+
+  }),
+
   getFileMessages: privateProcedure.input(z.object({
     limit: z.number().min(1).max(100).nullish(),
     cursor: z.string().nullish(),
@@ -172,7 +239,6 @@ export const appRouter = router({
 
   }),
 });
-
 // Export type router type signature,
 // NOT the router itself.
 export type AppRouter = typeof appRouter;
