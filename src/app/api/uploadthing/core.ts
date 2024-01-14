@@ -6,16 +6,13 @@ import {PDFLoader} from "langchain/document_loaders/fs/pdf"
 import { OpenAIEmbeddings } from "@langchain/openai"
 import {PineconeStore} from "@langchain/community/vectorstores/pinecone"
 import { pinecone } from "@/lib/pinecone";
+import { getUserSubscriptionPlan } from "@/lib/stripe";
+import { PLANS } from "@/config/stripe";
  
 const f = createUploadthing();
- 
- 
-// FileRouter for your app, can contain multiple FileRoutes
-export const ourFileRouter = {
-  pdfUploader: f({ pdf: { maxFileSize: "4MB" } })
-    .middleware(async ({ req }) => {
-      
-        const { getUser } = getKindeServerSession()
+
+const middleware = async () => {
+    const { getUser } = getKindeServerSession()
         const user = await getUser()
 
         if(!user || !user.id)
@@ -23,56 +20,64 @@ export const ourFileRouter = {
             throw new Error("Unauthorized")
         }
 
-        return { userId: user.id }
+        const subscriptionPlan = await getUserSubscriptionPlan()
+
+        return { userId: user.id, subscriptionPlan }
+}
+
+
+const onUploadComplete = async ({
+    metadata, file
+}: {
+    metadata: Awaited<ReturnType<typeof middleware>>
+    file: {
+        key: string,
+        name: string,
+        url: string,
+    }
+}) => {
+
+    //if the file exists no need to create a new file, just go with the already created one
+    const isFileExists = await db.file.findFirst({
+        where: {
+            key: file.key
+        }
     })
-    .onUploadComplete(async ({ metadata, file }) => {
-        //adding the file to our database
-        const createdFile = await db.file.create({
-            data: {
-                key: file.key,
-                name: file.name,
-                userId: metadata.userId,
-                url: file.url,
-                uploadStatus: "PROCESSING",
-            }
-        })
 
-        //
-        try {
-            //get the file
-            const response = await fetch (file.url)
+    if(isFileExists) return
 
-            const blob = await response.blob()
+    //adding the file to our database
+    const createdFile = await db.file.create({
+        data: {
+            key: file.key,
+            name: file.name,
+            userId: metadata.userId,
+            url: file.url,
+            uploadStatus: "PROCESSING",
+        }
+    })
 
-            const loader = new PDFLoader(blob)
+    //
+    try {
+        //get the file
+        const response = await fetch (file.url)
 
-            const pageLevelDocs = await loader.load()
+        const blob = await response.blob()
 
-            const pagesAmt = pageLevelDocs.length
+        const loader = new PDFLoader(blob)
 
-            //vectorize and index the entire document
-            const pineconeIndex = pinecone.Index("quill")
+        const pageLevelDocs = await loader.load()
 
-            const embeddings = new OpenAIEmbeddings({
-                openAIApiKey: process.env.OPENAI_API_KEY
-            })
+        const pagesAmt = pageLevelDocs.length
 
-            await PineconeStore.fromDocuments(pageLevelDocs, embeddings, {
-                pineconeIndex,
-                namespace: createdFile.id,
-            })
+        const {subscriptionPlan} = metadata
+        const {isSubscribed} = subscriptionPlan
 
+        const isProExceeded = pagesAmt>PLANS.find((plan) => plan.name==="Pro")!.pagesPerPdf
+        const isFreeExceeded = pagesAmt>PLANS.find((plan) => plan.name==="Free")!.pagesPerPdf
 
-            await db.file.update({
-                data: {
-                    uploadStatus: "SUCCESS"
-                },
-                where: {
-                    id: createdFile.id
-                }
-            })
-
-        } catch (error: any) {
+        if((isSubscribed && isProExceeded) || (!isSubscribed && !isFreeExceeded))
+        {
             await db.file.update({
                 data: {
                     uploadStatus: "FAILED"
@@ -82,7 +87,51 @@ export const ourFileRouter = {
                 }
             })
         }
-    }),
+
+        //vectorize and index the entire document
+        const pineconeIndex = pinecone.Index("quill")
+
+        const embeddings = new OpenAIEmbeddings({
+            openAIApiKey: process.env.OPENAI_API_KEY
+        })
+
+        await PineconeStore.fromDocuments(pageLevelDocs, embeddings, {
+            pineconeIndex,
+            namespace: createdFile.id,
+        })
+
+
+        await db.file.update({
+            data: {
+                uploadStatus: "SUCCESS"
+            },
+            where: {
+                id: createdFile.id
+            }
+        })
+
+    } catch (error: any) {
+        await db.file.update({
+            data: {
+                uploadStatus: "FAILED"
+            },
+            where: {
+                id: createdFile.id
+            }
+        })
+    }
+}
+ 
+ 
+// FileRouter for your app, can contain multiple FileRoutes
+export const ourFileRouter = {
+  freePlanUploader: f({ pdf: { maxFileSize: "4MB" } })
+    .middleware(middleware)
+    .onUploadComplete(onUploadComplete),
+
+  proPlanUploader: f({ pdf: { maxFileSize: "16MB" } })
+    .middleware(middleware)
+    .onUploadComplete(onUploadComplete),  
 } satisfies FileRouter;
  
 export type OurFileRouter = typeof ourFileRouter;
