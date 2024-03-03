@@ -1,4 +1,4 @@
-import { cn, constructMetadata } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import './globals.css'
 import { Inter } from 'next/font/google'
 import Navbar from '@/components/Navbar'
@@ -7,10 +7,14 @@ import Providers from '@/components/Providers'
 import "react-loading-skeleton/dist/skeleton.css"
 import { Toaster } from '@/components/ui/toaster'
 import "simplebar-react/dist/simplebar.min.css"
+import { Metadata } from 'next'
 
 const inter = Inter({ subsets: ['latin'] })
 
-export const metadata = constructMetadata()
+export const metadata: Metadata = {
+  title: 'Quill',
+  description: 'Quill-Chatting with your pdfs made a lot easier than ever.',
+}
 
 export default function RootLayout({
   children,
