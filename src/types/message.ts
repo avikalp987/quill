@@ -13,5 +13,5 @@ type ExtendedText = {
 }
 
 
-export type ExtendedMessage = OmitText & ExtendedText
+export type ExtendedMessage = OmitText & ExtendedText;
 
